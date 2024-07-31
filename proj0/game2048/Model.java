@@ -16,7 +16,7 @@ public class Model extends Observable {
     private int maxScore;
     /** True iff game is ended. */
     private boolean gameOver;
-
+    private final int MAX_PRICE=2048;
     /* Coordinate System: column C, row R of the board (where row 0,
      * column 0 is the lower-left corner of the board) will correspond
      * to board.tile(c, r).  Be careful! It works like (x, y) coordinates.
@@ -106,17 +106,58 @@ public class Model extends Observable {
      *    value, then the leading two tiles in the direction of motion merge,
      *    and the trailing tile does not.
      * */
+    public void boardMoveUp(Board b) {
+        boolean [][] Judge=new boolean[board.size()][board.size()];
+        for(int i=0;i<board.size();i++) {
+            for(int j=board.size()-2;j>=0;j--) {
+                boolean isFirst=true;
+                int ii=i;int jj=j;
+                while(jj<board.size()-1) {
+                    if(b.tile(ii,jj)!=null&&b.tile(ii,jj+1)==null){
+                        b.move(ii,jj+1,b.tile(ii,jj));
+                    }
+                    if (b.tile(ii,jj)!=null&&b.tile(ii,jj+1)!=null&&b.tile(ii,jj).value()==b.tile(ii,jj+1).value()&&isFirst&& !Judge[ii][jj + 1]&&!Judge[ii][jj]) {
+                        b.move(ii,jj+1,b.tile(ii,jj));
+                        Judge[ii][jj+1]=true;
+                        isFirst=false;
+                        score+=b.tile(ii,jj+1).value();
+                    }
+                    jj++;
+                }
+            }
+        }
+    }
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
 
+
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-
         checkGameOver();
-        if (changed) {
-            setChanged();
+        if (!changed) {
+            switch (side) {
+                case NORTH:
+                    boardMoveUp(board);
+                    break;
+                case WEST:
+                    board.setViewingPerspective(Side.WEST);
+                    boardMoveUp(board);
+                    board.setViewingPerspective(Side.NORTH);
+                    break;
+                case SOUTH:
+                    board.setViewingPerspective(Side.SOUTH);
+                    boardMoveUp(board);
+                    board.setViewingPerspective(Side.NORTH);
+                    break;
+                case EAST:
+                    board.setViewingPerspective(Side.EAST);
+                    boardMoveUp(board);
+                    board.setViewingPerspective(Side.NORTH);
+                    break;
+            }
+            changed = true;
         }
         return changed;
     }
@@ -138,6 +179,13 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for(int i=0;i<b.size();i++){
+            for(int j=0;j<b.size();j++){
+                if(b.tile(i,j)==null){
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +196,13 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for(int i=0;i<b.size();i++){
+            for(int j=0;j<b.size();j++){
+                if(b.tile(i,j)!=null&&b.tile(i,j).value()==MAX_PIECE){
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,10 +214,28 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if(emptySpaceExists(b)==true){
+            return true;
+        }
+        for(int i=0;i<b.size();i++){
+            for(int j=0;j<b.size();j++){
+                if(i>0&&b.tile(i-1,j)!=null&&i>=1&&b.tile(i-1,j).value()==b.tile(i,j).value()){//检验左边
+                        return true;
+                }
+
+                if(j<b.size()-1&&b.tile(i,j+1)!=null&&j>=1&&b.tile(i,j+1).value()==b.tile(i,j).value()){//检验上边
+                    return true;
+                }
+                if(i<b.size()-1&&b.tile(i+1,j)!=null&&i<b.size()-1&&b.tile(i+1,j).value()==b.tile(i,j).value()){//检验右边
+                    return true;
+                }
+                if(j>0&&b.tile(i,j-1)!=null&&j<b.size()-1&&b.tile(i,j-1).value()==b.tile(i,j).value()){//检验下边
+                    return true;
+                }
+            }
+        }
         return false;
     }
-
-
     @Override
      /** Returns the model as a string, used for debugging. */
     public String toString() {
